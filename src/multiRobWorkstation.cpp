@@ -20,6 +20,7 @@ class multiRobWorkstation
 	std::vector<cv::of2::IMatch> matches;
 	cv::of2::ChowLiuTree treeBuilder;
 //	cv::of2::FabMap2 fabmap;
+	cv::Ptr<cv::of2::FabMap> fabmap;
 
     public:
 	multiRobWorkstation();
@@ -28,8 +29,8 @@ class multiRobWorkstation
 };
 
 multiRobWorkstation::multiRobWorkstation()
+	:fabmap(NULL)
 {
-
 	sceneNode_sub = n.subscribe("/image_converter/scene_node", 1, &multiRobWorkstation::sceneNodeCallback,this);
 //	map_sub = n.subscribe("/map", 1, &sceneNodeCallback);
 
@@ -72,8 +73,10 @@ void multiRobWorkstation::sceneNodeCallback(const multi_robot_slam::Scenenode::C
 
   //run fabmap
   ROS_INFO("Running FabMap!");
-  cv::Ptr<cv::of2::FabMap> fabmap;
-  fabmap = new cv::of2::FabMap(tree,0.39,0,cv::of2::FabMap::SAMPLED | cv::of2::FabMap::CHOW_LIU);
+//  cv::Ptr<cv::of2::FabMap> fabmap;
+//  fabmap = new cv::of2::FabMap(tree,0.39,0,cv::of2::FabMap::SAMPLED | cv::of2::FabMap::CHOW_LIU);
+  if(!fabmap)
+	  fabmap = new cv::of2::FabMap(tree,0.39,0,cv::of2::FabMap::MEAN_FIELD | cv::of2::FabMap::CHOW_LIU);
   ROS_INFO("Running FabMap!");
 //  cv::imshow("trainImage", cv_ptr->image);
 //  cv::waitKey();
@@ -86,9 +89,29 @@ void multiRobWorkstation::sceneNodeCallback(const multi_robot_slam::Scenenode::C
 //  std::vector<cv::of2::IMatch> matches;
   fabmap->compare(data,matches,true);
   ROS_INFO("Running FabMap!");
-  std::vector<cv::of2::IMatch>::iterator l;
-  for(l=matches.begin();l!=matches.end();l++)
-	  ROS_INFO("match probilities:[%lf]",l->match);
+//  std::vector<cv::of2::IMatch>::iterator l;
+//  for(l=matches.begin();l!=matches.end();l++)
+//	  ROS_INFO("match probilities:[%lf],likelihood:[%lf]",l->match,l->likelihood);
+
+  //display result
+  cv::Mat result_small = cv::Mat::zeros(10, 10, CV_8UC1);
+      std::vector<cv::of2::IMatch>::iterator l;
+
+      for(l = matches.begin(); l != matches.end(); l++) {
+              if(l->imgIdx < 0) {
+                  result_small.at<char>(l->queryIdx, l->queryIdx) =
+                      (char)(l->match*255);
+
+              } else {
+                  result_small.at<char>(l->queryIdx, l->imgIdx) =
+                      (char)(l->match*255);
+              }
+      }
+
+      cv::Mat result_large(100, 100, CV_8UC1);
+      cv::resize(result_small, result_large, cv::Size(500, 500), 0, 0, CV_INTER_NN);
+      cv::imshow("Confusion Matrix", result_large);
+      cv::waitKey();
 }
 
 int main(int argc, char **argv)
