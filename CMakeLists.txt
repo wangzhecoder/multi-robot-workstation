@@ -20,7 +20,7 @@ set(OpenCV_DIR /usr/local/opencv2.4.9/share/OpenCV)
 find_package(OpenCV REQUIRED)
 #find_package(Eigen REQUIRED)
 message("OPECV_INCLUDE:"${OpenCV_INCLUDE_DIRS}\n)
-
+message("OPECV_lib:"${OpenCV_LIBRARIES}\n)
 #include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 #add_definitions(${EIGEN_DEFINITIONS})
